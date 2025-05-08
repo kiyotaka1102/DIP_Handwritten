@@ -258,13 +258,13 @@
             <div class="student-info">
                 <div class="student-card">
                     <h3>Student 1</h3>
-                    <p><strong>Name:</strong> [Student 1 Name]</p>
-                    <p><strong>ID:</strong> [Student 1 ID]</p>
+                    <p><strong>Name:</strong> [Phan Trieu Huy]</p>
+                    <p><strong>ID:</strong> [22110038]</p>
                 </div>
                 <div class="student-card">
                     <h3>Student 2</h3>
-                    <p><strong>Name:</strong> [Student 2 Name]</p>
-                    <p><strong>ID:</strong> [Student 2 ID]</p>
+                    <p><strong>Name:</strong> [Pham Nam Hao]</p>
+                    <p><strong>ID:</strong> [22110023]</p>
                 </div>
             </div>
 
@@ -304,6 +304,28 @@
                         <div class="form-check mb-3">
                             <input type="checkbox" class="form-check-input" id="useSceneTextDetection" checked>
                             <label class="form-check-label" for="useSceneTextDetection">Use Scene Text Detection</label>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Refinement:</label><br>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="refineOption" id="refineYes" value="true" checked>
+                                <label class="form-check-label" for="refineYes">Refine</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="refineOption" id="refineNo" value="false">
+                                <label class="form-check-label" for="refineNo">Not Refine</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Paragraph Detection:</label><br>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="paragraphOption" id="paragraphYes" value="true" checked>
+                                <label class="form-check-label" for="paragraphYes">Detect Paragraph</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="paragraphOption" id="paragraphNo" value="false">
+                                <label class="form-check-label" for="paragraphNo">No Paragraph Detection</label>
+                            </div>
                         </div>
                         
                         <button id="submitBtn" class="submit-btn">
@@ -386,7 +408,6 @@
             const processedImage = document.getElementById('processedImage');
             const detectionsCount = document.getElementById('detectionsCount');
             const detectionsList = document.getElementById('detectionsList');
-            const useSceneTextDetection = document.getElementById('useSceneTextDetection');
             const summaryText = document.getElementById('summaryText');
             
             imageUpload.addEventListener('change', function() {
@@ -406,57 +427,65 @@
                 }
             });
             
-            submitBtn.addEventListener('click', async function() {
+            submitBtn.addEventListener('click', async function () {
                 if (!imageUpload.files || imageUpload.files.length === 0) {
                     alert('Please select an image file.');
                     return;
                 }
-                
+            
                 const file = imageUpload.files[0];
                 const formData = new FormData();
+                const refineOption = document.querySelector('input[name="refineOption"]:checked').value;
+                const paragraphOption = document.querySelector('input[name="paragraphOption"]:checked').value;
+
+                // Append file and refine to FormData
                 formData.append('file', file);
-                formData.append('use_scene_text_detection', useSceneTextDetection.checked ? 'true' : 'false');
-                
+                formData.append('refine', refineOption);  
+                // use_scene_text_detection should be sent as a query parameter
+                const useScene = useSceneTextDetection.checked ? 'true' : 'false';
+
+                const url = `/detect/?use_scene_text_detection=${useScene}&detect_paragraph=${paragraphOption}`;
+                console.log(url);
                 loading.style.display = 'block';
                 rightSection.style.display = 'none';
-                
+            
                 try {
-                    const response = await fetch('/detect/', {
+                    const response = await fetch(url, {
                         method: 'POST',
                         body: formData
                     });
-                    
+            
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
-                    
+            
                     const data = await response.json();
-                    
+            
                     originalImage.src = `data:image/jpeg;base64,${data.original_image}`;
                     processedImage.src = `data:image/jpeg;base64,${data.processed_image}`;
                     detectionsCount.textContent = data.count;
                     summaryText.innerHTML = `<strong>Summary:</strong> ${data.summarized_sentence || 'No summary available'}`;
-                    
+            
                     detectionsList.innerHTML = '';
-                    
+            
                     data.detected_texts.forEach(item => {
                         const detectionItem = document.createElement('div');
                         detectionItem.className = 'detection-item d-flex align-items-center';
-                        
+            
                         const img = document.createElement('img');
                         img.src = `data:image/jpeg;base64,${item.image}`;
                         img.className = 'detection-image';
                         img.alt = `Detected Text ${item.id}`;
-                        
+            
                         const textDiv = document.createElement('div');
                         textDiv.className = 'detection-text';
                         textDiv.textContent = `Text ${item.id}: ${item.text}`;
-                        
+            
                         detectionItem.appendChild(img);
                         detectionItem.appendChild(textDiv);
                         detectionsList.appendChild(detectionItem);
                     });
-                    
+            
                     rightSection.style.display = 'block';
                     rightSection.scrollIntoView({ behavior: 'smooth' });
                 } catch (error) {
