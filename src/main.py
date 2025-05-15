@@ -159,7 +159,7 @@ def process_image(image, use_scene_text_detection=False, refine=True, detect_par
     detected_texts = []
     print(detect_paragraph,refine, use_scene_text_detection )
     if use_scene_text_detection:
-        boxes = detect_text_regions(enhanced_img,detect_paragraph, min_confidence= 0.4)
+        boxes = detect_text_regions(enhanced_img,detect_paragraph, min_confidence= 0.1)
 
         for i, (xmin, ymin, xmax, ymax) in enumerate(boxes):
             try:
